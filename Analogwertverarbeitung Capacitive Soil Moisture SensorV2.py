@@ -1,6 +1,6 @@
 #----------------------Eckdaten------------------------
 
-#Datum: 07.04.2025
+# Datum: 07.04.2025
 # Programm: Auswerten eines Analogsignals
 # Programmierer: Benkens Jan-Luca
 
@@ -45,3 +45,4 @@ while True:
     rohwert, volt = feuchtigkeit_auslesen()							 # Variabeln für Feuchtigkeitsauslesen benennen
     print("ADC:", rohwert, "| Spannung: ", round(volt,2), " V")		 # Printen der Wetrte in die Kommandozeile
     time.sleep(1)													 # Wartezeit für den ESP
+
