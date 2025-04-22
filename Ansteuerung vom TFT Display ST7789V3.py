@@ -25,7 +25,7 @@
 from machine import Pin, SPI, SoftI2C
 import st7789py as st7789
 import vga2_16x32 as font
-import time
+
 #------------------------------------------------------
 
 #---------------------Initialisieren-------------------
@@ -49,12 +49,10 @@ tft = st7789.ST7789(
     rotation = 4)
 
 #--------------------Hauptprogramm---------------------
+    
+tft.fill(st7789.WHITE)
+tft.text(font, "Werte", 10, 40, st7789.BLUE, st7789.WHITE)
+tft.text(font, "Temp", 10, 80, st7789.BLUE, st7789.WHITE)
+tft.text(font, "Luft", 10, 140, st7789.BLUE, st7789.WHITE)
 
-while True:
-    
-    tft.fill(st7789.WHITE)
-    tft.text(font, "Werte", 10, 40, st7789.BLUE, st7789.WHITE)
-    tft.text(font, "Temp", 10, 80, st7789.BLUE, st7789.WHITE)
-    tft.text(font, "Luft", 10, 140, st7789.BLUE, st7789.WHITE)
-    
-    time.sleep(5)
+#------------------------ENDE--------------------------
