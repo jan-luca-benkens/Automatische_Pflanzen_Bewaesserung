@@ -1,6 +1,8 @@
 #----------------------Eckdaten------------------------
 
-# Datum: 22.04.2025
+# Erstellungsdatum: 22.04.2025
+# Änderungsdatum: 24.04.2025
+# Änderungsnummer: 1.0
 # Programm: Auswerten von Sensoren und Ansteuerung des TFT Displays
 # Programmierer: Benkens Jan-Luca
 
@@ -80,20 +82,32 @@ def feuchtigkeit_auslesen():
     spannung = raw / 4095 * 3.3		 # Rechnet den 12 Bit-Wert in eine Spannung um
     return raw, spannung			 # Rückgabe der Werte
 
+# Zeitstartpunkt für Time Ticks deffinieren
+
+startzeit = time.ticks_ms()
+
+# while Schleife um Sensordaten erneut senden zu können
+
 while True:
-    rohwert, volt = feuchtigkeit_auslesen()							 # Variabeln für Feuchtigkeitsauslesen benennen
     
-    co2 = sensor_ens160.get_eco2()				 # Variabel erstellen
+    aktuellezeit = time.ticks_ms()
     
-    temp = round(sensor_aht21.temperature,0)	 # Variabelerstellen    
+    if time.ticks_diff(aktuellezeit, startzeit) >= 5000:
     
-    print(co2, temp, rohwert, round(volt,2))
+        rohwert, volt = feuchtigkeit_auslesen()
+        
+        co2 = sensor_ens160.get_eco2() 
+        
+        temp = round(sensor_aht21.temperature,0)    
+        
+        print(co2, temp, rohwert, round(volt,2))
+        
+        tft.fill(st7789.WHITE)
+        tft.text(font, "Werte:", 10, 40, st7789.BLUE, st7789.WHITE)
+        tft.text(font, "Temp:{} C".format(temp), 10, 80, st7789.BLUE, st7789.WHITE)
+        tft.text(font, "Luft:{} ppm".format(co2), 10, 120, st7789.BLUE, st7789.WHITE)
+        tft.text(font, "Boden:{} V".format(round(volt,2)), 10, 160, st7789.BLUE, st7789.WHITE)
+        
+        startzeit = aktuellezeit
     
-    tft.fill(st7789.WHITE)
-    tft.text(font, "Werte:", 10, 40, st7789.BLUE, st7789.WHITE)
-    tft.text(font, "Temp:{} C".format(temp), 10, 80, st7789.BLUE, st7789.WHITE)
-    tft.text(font, "Luft:{} ppm".format(co2), 10, 120, st7789.BLUE, st7789.WHITE)
-    tft.text(font, "Feucht:{} V".format(round(volt,2)), 10, 160, st7789.BLUE, st7789.WHITE)
-    
-    time.sleep(5)
     
