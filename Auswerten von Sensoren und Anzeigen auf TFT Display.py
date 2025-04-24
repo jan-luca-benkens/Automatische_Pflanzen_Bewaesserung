@@ -1,32 +1,32 @@
-#----------------------Eckdaten------------------------
+#----------------------------------------------Eckdaten---------------------------------------------
 
 # Erstellungsdatum: 22.04.2025
 # Änderungsdatum: 24.04.2025
-# Änderungsnummer: 1.0
+# Änderungsnummer: 1.1
 # Programm: Auswerten von Sensoren und Ansteuerung des TFT Displays
 # Programmierer: Benkens Jan-Luca
 
-# ---------------------Hardware------------------------
+# ---------------------------------------------Hardware----------------------------------------------
 
 # - ESP 32
 # - TFT Display IC: ST7789V3
 # - ENS160 und AHT21
 # - Capacitive Soil Moisture Sensor V2
 
-#----------------------Software------------------------
+#----------------------------------------------Software----------------------------------------------
 
 # - Thonny
 # - GitHub
 
-#--------------------Beschreibung----------------------
+#--------------------------------------------Beschreibung--------------------------------------------
 
 # Im folgenden Programm wird ein TFT-Display angesteuert.
 # Welches die Ausgewerteten Sensorwert vom ENS160 in ppm,
 # AHT21 in °C und des Capacitive Soil MoistureV2 in Bit-Format bzw als V.
 
-#------------------------------------------------------
+#----------------------------------------------------------------------------------------------------
 
-#---------------------Bibliotheken---------------------
+#--------------------------------------------Bibliotheken--------------------------------------------
 
 from machine import Pin, SPI, SoftI2C,ADC
 import st7789py as st7789
@@ -35,9 +35,9 @@ from ahtx0 import AHT20
 from ens_160 import ENS160
 import time
 
-#------------------------------------------------------
+#------------------------------------------------------------------------------------------------------
 
-#---------------------Initialisieren-------------------
+#--------------------------------------------Initialisieren--------------------------------------------
 
 # -TFT-Display ST7789V3
 
@@ -73,40 +73,48 @@ soil = ADC(Pin(5))					 # Variabel für den PIN 4 Eingang mit ADC (Analog-Digita
 soil.atten(ADC.ATTN_11DB)			 # Lässt den Spannungsbereich 0 - 3.3V auf dem PIN 4 zu
 soil.width(ADC.WIDTH_12BIT)			 # Die Analogwerte werden in 12 Bit Auflösung: 0 - 4095
 
-#--------------------Hauptprogramm---------------------
+#--------------------------------------------Hauptprogramm--------------------------------------------
 
-# -Funktion Feuchtigkeit auslesen
+# -Funktion Spannung in Prozent umrechnen
 
-def feuchtigkeit_auslesen():
-    raw = soil.read()				 # Liest den Aktuellen 12Bit-Wert
-    spannung = raw / 4095 * 3.3		 # Rechnet den 12 Bit-Wert in eine Spannung um
-    return raw, spannung			 # Rückgabe der Werte
-
+def prozentualerbereich(spannung, nass = 1.0, trocken = 2.7):			 # Bedinung für die Funktion definieren
+    prozent_spannung = (trocken - spannung) / (trocken - nass) * 100	 # Rechnung für den Prozentwert
+    return max(0, min(100, prozent_spannung))							 # Begrezung des Prozentwerts zwischen 0%-100%
+    
 # Zeitstartpunkt für Time Ticks deffinieren
 
 startzeit = time.ticks_ms()
 
-# while Schleife um Sensordaten erneut senden zu können
+# Hintergrund des TFT-Displays weiß leuchten lassen
+
+tft.fill(st7789.WHITE)
+
+#--------------------------------------------while Schleife--------------------------------------------
 
 while True:
     
-    aktuellezeit = time.ticks_ms()
+    aktuellezeit = time.ticks_ms() 
     
     if time.ticks_diff(aktuellezeit, startzeit) >= 5000:
     
-        rohwert, volt = feuchtigkeit_auslesen()
+        volt = soil.read() / 4095 * 3.3 
+        
+        prozent = prozentualerbereich(volt)
         
         co2 = sensor_ens160.get_eco2() 
         
         temp = round(sensor_aht21.temperature,0)    
         
-        print(co2, temp, rohwert, round(volt,2))
+        print(co2, temp, round(volt,2), round (prozent,2))
         
-        tft.fill(st7789.WHITE)
+       
         tft.text(font, "Werte:", 10, 40, st7789.BLUE, st7789.WHITE)
         tft.text(font, "Temp:{} C".format(temp), 10, 80, st7789.BLUE, st7789.WHITE)
         tft.text(font, "Luft:{} ppm".format(co2), 10, 120, st7789.BLUE, st7789.WHITE)
-        tft.text(font, "Boden:{} V".format(round(volt,2)), 10, 160, st7789.BLUE, st7789.WHITE)
+        
+        tft.fill_rect(10, 160, 200, 32, st7789.WHITE)		 # Löscht den alten Textbereich
+        tft.text(font, "Boden:{} %".format(round(prozent,0)), 10, 160, st7789.BLUE, st7789.WHITE)
+            
         
         startzeit = aktuellezeit
     
