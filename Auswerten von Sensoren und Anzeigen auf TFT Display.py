@@ -1,8 +1,8 @@
 #----------------------------------------------Eckdaten---------------------------------------------
 
 # Erstellungsdatum: 22.04.2025
-# Änderungsdatum: 25.04.2025
-# Änderungsnummer: 1.2
+# Änderungsdatum: 28.04.2025
+# Änderungsnummer: 1.3
 # Programm: Auswerten von Sensoren und Ansteuerung des TFT Displays
 # Programmierer: Benkens Jan-Luca
 
@@ -22,7 +22,11 @@
 
 # Im folgenden Programm wird ein TFT-Display angesteuert.
 # Welches die Ausgewerteten Sensorwert vom ENS160 in ppm,
-# AHT21 in °C und des Capacitive Soil MoistureV2 in Bit-Format bzw als V.
+# AHT21 in °C und des Capacitive Soil MoistureV2 in ein Prozentwert,
+# auf dem TFT-Display ausgibt.
+# Sobald bestimmte CO²-Werte erreicht sind, wird dies farblich auf dem
+# TFT-Display deutlich (Grün = alles Gut; Gelb = Langsam mal Lüften;
+# Rot = Schlecht, dringend Lüften).
 
 #----------------------------------------------------------------------------------------------------
 
@@ -92,28 +96,54 @@ while True:														 # Dauerschleife zur regelmäßigen Datenerfassung
     
     aktuellezeit = time.ticks_ms()
     
-    if time.ticks_diff(aktuellezeit, startzeit) >= 5000:			 # Messung alle 5 Sekunden ausführen
+    if time.ticks_diff(aktuellezeit, startzeit) >= 5000:				 # Messung alle 5 Sekunden ausführen
     
-        spannung = soil.read() / 4095 * 3.3							 # Bodenfeuchtigkeit in Volt umrechnen
+        spannung = soil.read() / 4095 * 3.3								 # Bodenfeuchtigkeit in Volt umrechnen
         
-        prozent = prozentualerbereich(spannung)						 # Umrechnung in Prozent
+        prozent = prozentualerbereich(spannung)							 # Umrechnung in Prozent
         
-        co2 = sensor_ens160.get_eco2()								 # CO²-Messung (eCO²) vom ENS160
+        co2 = sensor_ens160.get_eco2()									 # CO²-Messung (eCO²) vom ENS160
         
-        temp = round(sensor_aht21.temperature,0)					 # Temperatur vom AHT21    
+        temp = round(sensor_aht21.temperature,0)						 # Temperatur vom AHT21    
         
-        print(co2, temp, round(volt,2), round (prozent,2))			 # Werte zur Kontrolle in der Kommandozeile ausgeben
+        print(co2, temp, round(spannung,2), round (prozent,2))			 # Werte zur Kontrolle in der Kommandozeile ausgeben
         
         #--------Daten auf dem TFT-Display anzeigen lassen--------
         
-        tft.text(font, "Werte:", 10, 40, st7789.BLUE, st7789.WHITE)
-        tft.text(font, "Temp:{} C".format(temp), 10, 80, st7789.BLUE, st7789.WHITE)
-        tft.text(font, "Luft:{} ppm".format(co2), 10, 120, st7789.BLUE, st7789.WHITE)
-        
-        tft.fill_rect(10, 160, 200, 32, st7789.WHITE)				 # Löscht den alten Textbereich
-        tft.text(font, "Boden:{} %".format(round(prozent,0)), 10, 160, st7789.BLUE, st7789.WHITE)
+        if co2 < 600:													 # CO²-Wert ist gut; man muss nicht Lüften
             
+            tft.fill(st7789.GREEN)
+            tft.text(font, "Werte:", 10, 40, st7789.BLACK, st7789.GREEN)
+            tft.text(font, "Temp:{} C".format(temp), 10, 80, st7789.BLACK, st7789.GREEN)
+            tft.text(font, "Luft:{} ppm".format(co2), 10, 120, st7789.BLACK, st7789.GREEN)
+            
+            tft.fill_rect(10, 160, 200, 32, st7789.GREEN)				 # Löscht den alten Textbereich
+            tft.text(font, "Boden:{} %".format(round(prozent,0)), 10, 160, st7789.BLACK, st7789.GREEN)
+            
+        elif 600< co2 <1000:											 # CO²-Wert ist OK; man sollte langsam lüften
+            
+            tft.fill(st7789.YELLOW)
+            tft.text(font, "Werte:", 10, 40, st7789.BLACK, st7789.YELLOW)
+            tft.text(font, "Temp:{} C".format(temp), 10, 80, st7789.BLACK, st7789.YELLOW)
+            tft.text(font, "Luft:{} ppm".format(co2), 10, 120, st7789.BLACK, st7789.YELLOW)
+            
+            tft.fill_rect(10, 160, 200, 32, st7789.YELLOW)				 # Löscht den alten Textbereich
+            tft.text(font, "Boden:{} %".format(round(prozent,0)), 10, 160, st7789.BLACK, st7789.YELLOW)
+            
+        elif co2 <1000:													 # CO²-Wert ist schlecht; dringend Lüften!
+            
+            tft.fill(st7789.RED)
+            tft.text(font, "Werte:", 10, 40, st7789.BLACK, st7789.RED)
+            tft.text(font, "Temp:{} C".format(temp), 10, 80, st7789.BLACK, st7789.RED)
+            tft.text(font, "Luft:{} ppm".format(co2), 10, 120, st7789.BLACK, st7789.RED)
+            
+            tft.fill_rect(10, 160, 200, 32, st7789.RED)				 # Löscht den alten Textbereich
+            tft.text(font, "Boden:{} %".format(round(prozent,0)), 10, 160, st7789.BLACK, st7789.RED)
+            
+
         
         startzeit = aktuellezeit									 # Startzeit zurücksetzen
     
     
+
+
