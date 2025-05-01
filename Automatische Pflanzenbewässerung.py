@@ -27,9 +27,10 @@
 # Sobald bestimmte CO²-Werte erreicht sind, wird dies farblich auf dem
 # TFT-Display deutlich (Grün = alles Gut; Gelb = Langsam mal Lüften;
 # Rot = Schlecht, dringend Lüften).
-# Im nachfolgenden werden die Sensordaten über ein Netzwerk zu einem Broker (MQTT) geschickt.
+# Im nachfolgenden werden die Sensordaten über ein Netzwerk an einem Broker (MQTT) gesendet.
 # Der Broker (MQTT) dient als Schnittstelle, wodurch die Sensordaten durch abonnieren des Brokkers
 # abgefragt werden können.
+# Über Node-red werden die Daten weiter verarbeitet und auf einem Dashboard visualisiert
 
 #----------------------------------------------------------------------------------------------------
 
@@ -71,9 +72,7 @@ tft = st7789.ST7789(
 # -I2C-Bus für ENS160 und AHT21
 
 i2c = SoftI2C(scl=Pin(4), sda=Pin(7))		 # Software-I2C
-
 sensor_ens160 = ENS160(i2c)					 # Initialisieren des ENS160 Sensors
-
 sensor_aht21 = AHT20(i2c)					 # Initialisieren des AHT21 Sensors
 
 # -ADC Capacitive Soil Moisture Sensor V2
@@ -85,18 +84,11 @@ soil.width(ADC.WIDTH_12BIT)			 # Die Analogwerte werden in 12 Bit Auflösung: 0 
 # -Variabel für Pumpe
 
 pumpe = Pin(8,Pin.OUT)						 # Pin für High(1) bzw Low(0) für die Pumpe
-
-# MQTT-Konfiguration
-BROKER = "192.168.178.78"  				 # IP-Adresse des Brokers (Laptop,PC)
-PORT = 1883								 # Port definieren
-CLIENT_ID = "JLB"						 # Client-Id vom MQTT
-TOPIC = "Pflanze/Auto/Bewaesserung"				 # Topic des MQTT Broker
-
+pumpe_on = False
 
 # WLAN-Verbindung herstellen
 SSID = "Holzmodem1884"					 # Wlan "Name"
 PASSWORD = "Lassmichein123"				 # Passwort des Wlan
-
 
 wlan = network.WLAN(network.STA_IF)		 # Wlan-Client erzeugen
 wlan.active(False)						 # Wlan Reset
@@ -111,24 +103,57 @@ if not wlan.isconnected():				 # Testen der WLAN Verbindung
 
 print("WLAN verbunden:", wlan.ifconfig()) # Konfigurationsdaten vom Wlan
 
+# MQTT-Konfiguration
+BROKER = "192.168.178.78"  				 # IP-Adresse des Brokers (Laptop,PC)
+PORT = 1883								 # Port definieren
+CLIENT_ID = "JLB"						 # Client-Id vom MQTT
+TOPIC1 = "Pflanze/Auto/Bewaesserung"	 # Topic des MQTT Broker
+TOPIC2 = "Pump/EIN/AUS"					 # Topic 
+
+print("Mit MQTT-Broker verbunden.")
 
 
 #----------------------------------------------Funktionen---------------------------------------------
 
+# Funktion zur Datenauswertung
+def sub_pumpe(topic, msg):
+    
+    daten = json.loads(msg)
+    print(daten)
+    schalter = daten.get('Schalter')# Alternativ: schalter = (daten['Schalter']) 
+    print(schalter)
+    if schalter == 'ON':# LED einschalten     
+ 
+        global pumpe_on					 # Wichtig: Globale Variable nutzen und keine neue Variable erzeugen
+         
+        pumpe_on = True
+
+    else:								 # sonst ausschalten
+        global pumpe_on 
+        pumpe_on = False 
+
 # -Funktion Spannung in Prozent umrechnen
-# -Eingabe: Spannung in Volt
-# -Rückgabe: Prozentualer Wert für die Feuchtigkeit (zwischen 0% und 100%)
+#  Eingabe: Spannung in Volt
+#  Rückgabe: Prozentualer Wert für die Feuchtigkeit (zwischen 0% und 100%)
 
 def prozentualerbereich(spannung, nass = 1.0, trocken = 2.7):			 # Bedinung für die Funktion definieren
     prozent_spannung = (trocken - spannung) / (trocken - nass) * 100	 # Rechnung für den Prozentwert
     return max(0, min(100, prozent_spannung))							 # Begrezung des Prozentwerts zwischen 0%-100%
 
+# -Funktionen zum Ein/Ausschalten der Pumpe
+
+def pumpe_ein():
+    pumpe.value(1)
+
+def pumpe_aus():
+    pumpe.value(0)    
 
 # MQTT-Client einrichten
 client = MQTTClient(CLIENT_ID, BROKER, PORT, keepalive = 30)
-    
+client.set_callback(sub_pumpe) 
+time.sleep(1)
 client.connect()
-print("Mit MQTT-Broker verbunden.")
+client.subscribe(TOPIC2) 
 
 #---------------------------------------------Hauptprogramm--------------------------------------------
 
@@ -136,7 +161,7 @@ startzeit = time.ticks_ms()										 # Zeitstartpunkt für Time Ticks deffinier
 
 tft.fill(st7789.WHITE)											 # Hintergrund des TFT-Displays weiß leuchten lassen
 
-while True:														 # Dauerschleife zur regelmäßigen Datenerfassung
+while True:														 # Dauerschleife zur regelmäßigen Datenerfassung    
     
     aktuellezeit = time.ticks_ms()
     
@@ -183,27 +208,19 @@ while True:														 # Dauerschleife zur regelmäßigen Datenerfassung
             tft.fill_rect(10, 160, 200, 32, st7789.RED)				 # Löscht den alten Textbereich
             tft.text(font, "Boden:{} %".format(prozent,0), 10, 160, st7789.BLACK, st7789.RED)
         
-        #--------Pumpe EIN/AUS schalten bei bestimmten Grenzwerten--------
-        
-        if prozent > 60:											 # Bodenfeuchtigkeit über 60%
-            pumpe.value(0)											 # pumpe auf 0 setzen
-        
-        elif prozent < 40:											 # Bodenfeuchtigkeit unter 40%
-            pumpe.value(1)											 # pumpe auf 1 setzen
-        
         #--------Daten für MQTT bereit machen und senden--------
         
-        daten = {"Bodenfeuchtigkeit": prozent, "Luftqualitaet": co2, "Temperatur": temp}	 # Sensor daten für JSON vorbereiten
+        sensor_daten = {"Bodenfeuchtigkeit": prozent, "Luftqualitaet": co2, "Temperatur": temp}	 # Sensor daten für JSON vorbereiten
         
-        json_string = json.dumps(daten)														 # Json-String erstellen
+        json_string = json.dumps(sensor_daten)														 # Json-String erstellen
          
         # Versuch von daten als JSON Format zum Brokker zu senden  
         try:
             
-            client.publish(TOPIC, json_string)
+            client.publish(TOPIC1, json_string)
             print(f"Nachricht gesendet: {json_string}")
         
-        # Fehler beim Senden der MQTT-Nachricht ausgeben
+        # Fehlermeldung beim Senden der MQTT-Nachricht ausgeben
         
         except OSError as e:
             print("Fehler beim Senden der MQTT-Nachricht:", e)
@@ -216,6 +233,25 @@ while True:														 # Dauerschleife zur regelmäßigen Datenerfassung
                 
             except:
                 print("Wiederverbindung zum Broker fehlgeschlagen.")
+                
+        #--------Pumpe EIN/AUS schalten bei bestimmten Grenzwerten--------
+                
+        if pumpe_on is False :
+            
+            if prozent > 60:											 # Bodenfeuchtigkeit über 60%
+                pumpe_aus()												 # pumpe auf 0 setzen
+        
+            elif prozent < 40:											 # Bodenfeuchtigkeit unter 40%
+                pumpe_ein()												 # pumpe auf 1 setzen
+                    
+        else:
+            if pumpe_on:
+                pumpe_ein()
+            
+            else:
+                pumpe_aus()
+                
+        client.check_msg() 											 # Warten, bis eine neue Nachricht vorliegt.
         
         startzeit = aktuellezeit									 # Startzeit zurücksetzen
          
@@ -223,6 +259,8 @@ while True:														 # Dauerschleife zur regelmäßigen Datenerfassung
         
     
     
+
+
 
 
 
