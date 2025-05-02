@@ -1,8 +1,8 @@
 #----------------------------------------------Eckdaten---------------------------------------------
 
 # Erstellungsdatum: 22.04.2025
-# Änderungsdatum: 01.05.2025
-# Änderungsnummer: 1.4
+# Änderungsdatum: 02.05.2025
+# Änderungsnummer: 1.5
 # Programm: Automatische Pflanzenbewässerung
 # Programmierer: Benkens Jan-Luca
 
@@ -27,10 +27,9 @@
 # Sobald bestimmte CO²-Werte erreicht sind, wird dies farblich auf dem
 # TFT-Display deutlich (Grün = alles Gut; Gelb = Langsam mal Lüften;
 # Rot = Schlecht, dringend Lüften).
-# Im nachfolgenden werden die Sensordaten über ein Netzwerk an einem Broker (MQTT) gesendet.
+# Im nachfolgenden werden die Sensordaten über ein Netzwerk zu einem Broker (MQTT) geschickt.
 # Der Broker (MQTT) dient als Schnittstelle, wodurch die Sensordaten durch abonnieren des Brokkers
 # abgefragt werden können.
-# Über Node-red werden die Daten weiter verarbeitet und auf einem Dashboard visualisiert
 
 #----------------------------------------------------------------------------------------------------
 
@@ -115,14 +114,15 @@ print("Mit MQTT-Broker verbunden.")
 
 #----------------------------------------------Funktionen---------------------------------------------
 
-# Funktion zur Datenauswertung
+# -Funktion zur Auswertung der MQTT-Message
+
 def sub_pumpe(topic, msg):
     
     daten = json.loads(msg)
     print(daten)
     schalter = daten.get('Schalter')# Alternativ: schalter = (daten['Schalter']) 
     print(schalter)
-    if schalter == 'ON':# LED einschalten     
+    if schalter == 'ON':# Pumpe einschalten     
  
         global pumpe_on					 # Wichtig: Globale Variable nutzen und keine neue Variable erzeugen
          
@@ -146,7 +146,20 @@ def pumpe_ein():
     pumpe.value(1)
 
 def pumpe_aus():
-    pumpe.value(0)    
+    pumpe.value(0)
+
+# -Funktion für Displayfarbe und Displaytext 
+
+def display_farbe(st_farbe, temp, co2, prozent):
+    
+    tft.fill(st_farbe)
+    tft.text(font, "Werte:", 10, 40, st7789.BLACK, st_farbe)
+    tft.text(font, "Temp:{} C".format(temp), 10, 80, st7789.BLACK, st_farbe)
+    tft.text(font, "Luft:{} ppm".format(co2), 10, 120, st7789.BLACK, st_farbe)
+    
+    tft.fill_rect(10, 160, 200, 32, st_farbe)				 # Löscht den alten Textbereich
+    tft.text(font, "Boden:{} %".format(prozent,0), 10, 160, st7789.BLACK, st_farbe)
+    
 
 # MQTT-Client einrichten
 client = MQTTClient(CLIENT_ID, BROKER, PORT, keepalive = 30)
@@ -178,35 +191,13 @@ while True:														 # Dauerschleife zur regelmäßigen Datenerfassung
         
         #--------Daten auf dem TFT-Display anzeigen lassen--------
         
-        if co2 < 600:													 # CO²-Wert ist gut; man muss nicht Lüften
-            
-            tft.fill(st7789.GREEN)
-            tft.text(font, "Werte:", 10, 40, st7789.BLACK, st7789.GREEN)
-            tft.text(font, "Temp:{} C".format(temp), 10, 80, st7789.BLACK, st7789.GREEN)
-            tft.text(font, "Luft:{} ppm".format(co2), 10, 120, st7789.BLACK, st7789.GREEN)
-            
-            tft.fill_rect(10, 160, 200, 32, st7789.GREEN)				 # Löscht den alten Textbereich
-            tft.text(font, "Boden:{} %".format(prozent,0), 10, 160, st7789.BLACK, st7789.GREEN)
-            
-        elif 600< co2 <1000:											 # CO²-Wert ist OK; man sollte langsam lüften
-            
-            tft.fill(st7789.YELLOW)
-            tft.text(font, "Werte:", 10, 40, st7789.BLACK, st7789.YELLOW)
-            tft.text(font, "Temp:{} C".format(temp), 10, 80, st7789.BLACK, st7789.YELLOW)
-            tft.text(font, "Luft:{} ppm".format(co2), 10, 120, st7789.BLACK, st7789.YELLOW)
-            
-            tft.fill_rect(10, 160, 200, 32, st7789.YELLOW)				 # Löscht den alten Textbereich
-            tft.text(font, "Boden:{} %".format(prozent,0), 10, 160, st7789.BLACK, st7789.YELLOW)
-            
-        elif co2 <1000:													 # CO²-Wert ist schlecht; dringend Lüften!
-            
-            tft.fill(st7789.RED)
-            tft.text(font, "Werte:", 10, 40, st7789.BLACK, st7789.RED)
-            tft.text(font, "Temp:{} C".format(temp), 10, 80, st7789.BLACK, st7789.RED)
-            tft.text(font, "Luft:{} ppm".format(co2), 10, 120, st7789.BLACK, st7789.RED)
-            
-            tft.fill_rect(10, 160, 200, 32, st7789.RED)				 # Löscht den alten Textbereich
-            tft.text(font, "Boden:{} %".format(prozent,0), 10, 160, st7789.BLACK, st7789.RED)
+        if co2 < 600:            
+            display_farbe(st7789.GREEN, temp, co2, prozent)
+        elif co2 < 1000:
+            display_farbe(st7789.YELLOW, temp, co2, prozent)
+        else:
+            display_farbe(st7789.RED, temp, co2, prozent)
+
         
         #--------Daten für MQTT bereit machen und senden--------
         
