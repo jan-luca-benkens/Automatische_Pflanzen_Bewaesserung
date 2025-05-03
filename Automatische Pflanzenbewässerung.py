@@ -1,7 +1,7 @@
 #----------------------------------------------Eckdaten---------------------------------------------
 
 # Erstellungsdatum: 22.04.2025
-# Änderungsdatum: 02.05.2025
+# Änderungsdatum: 03.05.2025
 # Änderungsnummer: 1.6
 # Programm: Automatische Pflanzenbewässerung
 # Programmierer: Benkens Jan-Luca
@@ -107,13 +107,27 @@ BROKER = "192.168.178.78"  				 # IP-Adresse des Brokers (Laptop,PC)
 PORT = 1883								 # Port definieren
 CLIENT_ID = "JLB"						 # Client-Id vom MQTT
 TOPIC1 = "Pflanze/Auto/Bewaesserung"	 # Topic des MQTT Broker
-TOPIC2 = "Pump/EIN/AUS"					 # Topic
+TOPIC2 = b"Pump/EIN/AUS"					 # Topic
 TOPIC3 = "Datenbank"
+TOPIC4 = b"Untererschwellenwert"
+TOPIC5 = b"Obererschwellenwert"
 
 print("Mit MQTT-Broker verbunden.")
 
 
 #----------------------------------------------Funktionen---------------------------------------------
+
+oberergrenzwert = 0 
+unterergrenzwert = 0 
+
+def mqtt_callback(topic, msg):
+    if topic == TOPIC5:
+        sub_oberergrenzwert(topic, msg)
+    elif topic == TOPIC2:
+        sub_pumpe(topic, msg)
+    elif topic == TOPIC4:
+        sub_untergrenzwert(topic, msg)
+
 
 # -Funktion zur Auswertung der MQTT-Message
 
@@ -132,6 +146,28 @@ def sub_pumpe(topic, msg):
     else:								 # sonst ausschalten
         global pumpe_on 
         pumpe_on = False 
+
+    
+
+def sub_oberergrenzwert(topic, msg):
+    
+    daten = json.loads(msg)
+    print(daten)
+    wert = daten.get('oberergrenzwert')# Alternativ: schalter = (daten['Schalter']) 
+    print("Wert:",wert)
+    
+    global oberergrenzwert
+    oberergrenzwert = wert
+
+def sub_untergrenzwert(topic, msg):
+    
+    daten = json.loads(msg)
+    print(daten)
+    wert = daten.get('unterergrenzwert')# Alternativ: schalter = (daten['Schalter']) 
+    print("Wert:",wert)
+    
+    global unterergrenzwert
+    unterergrenzwert = wert
 
 # -Funktion Spannung in Prozent umrechnen
 #  Eingabe: Spannung in Volt
@@ -160,13 +196,16 @@ def display_farbe(st_farbe, temp, co2, prozent):
     
     tft.fill_rect(10, 160, 200, 32, st_farbe)				 # Löscht den alten Textbereich
     tft.text(font, "Boden:{} %".format(prozent), 10, 160, st7789.BLACK, st_farbe)
-    
 
 # MQTT-Client einrichten
 client = MQTTClient(CLIENT_ID, BROKER, PORT, keepalive = 30)
-client.set_callback(sub_pumpe) 
+client.set_callback(mqtt_callback)
 client.connect()
-client.subscribe(TOPIC2) 
+client.subscribe(TOPIC2)
+client.subscribe(TOPIC5)
+client.subscribe(TOPIC4)
+
+
 
 #---------------------------------------------Hauptprogramm--------------------------------------------
 
@@ -177,6 +216,7 @@ tft.fill(st7789.WHITE)											 # Hintergrund des TFT-Displays weiß leuchten 
 
 while True:														 # Dauerschleife zur regelmäßigen Datenerfassung    
     client.check_msg() 											 # Warten, bis eine neue Nachricht vorliegt.
+
     aktuellezeit = time.ticks_ms()
     
     spannung = soil.read() / 4095 * 3.3								 # Bodenfeuchtigkeit in Volt umrechnen        
@@ -194,10 +234,10 @@ while True:														 # Dauerschleife zur regelmäßigen Datenerfassung
             
     if pumpe_on is False :
         
-        if prozent > 60:											 # Bodenfeuchtigkeit über 60%
+        if prozent >= oberergrenzwert:											 # Bodenfeuchtigkeit über 60%
             pumpe_aus()												 # pumpe auf 0 setzen
     
-        elif prozent < 40:											 # Bodenfeuchtigkeit unter 40%
+        elif prozent < unterergrenzwert:											 # Bodenfeuchtigkeit unter 40%
             pumpe_ein()												 # pumpe auf 1 setzen
                 
     else:
@@ -246,6 +286,12 @@ while True:														 # Dauerschleife zur regelmäßigen Datenerfassung
             display_farbe(st7789.YELLOW, temp, co2, prozent)
         else:
             display_farbe(st7789.RED, temp, co2, prozent)
+        
+        #if unterergrenzwert is not None :
+        
+           # print(unterergrenzwert)
+        #else:
+            #print("keine Nachricht vorhanden")
 
          
         # Versuch von daten als JSON Format zum Brokker zu senden  
@@ -269,16 +315,3 @@ while True:														 # Dauerschleife zur regelmäßigen Datenerfassung
                 print("Wiederverbindung zum Broker fehlgeschlagen.") 
         
         startzeit = aktuellezeit									 # Startzeit zurücksetzen
-        
-
-        
-        
-    
-    
-
-
-
-
-
-
-
