@@ -1,8 +1,8 @@
 #----------------------------------------------Eckdaten---------------------------------------------
 
 # Erstellungsdatum: 22.04.2025
-# Änderungsdatum: 03.05.2025
-# Änderungsnummer: 1.6
+# Änderungsdatum: 04.05.2025
+# Änderungsnummer: 1.7
 # Programm: Automatische Pflanzenbewässerung
 # Programmierer: Benkens Jan-Luca
 
@@ -20,16 +20,21 @@
 
 #--------------------------------------------Beschreibung--------------------------------------------
 
-# Im folgenden Programm wird ein TFT-Display angesteuert.
-# Welches die Ausgewerteten Sensorwert vom ENS160 in ppm,
-# AHT21 in °C und des Capacitive Soil MoistureV2 in ein Prozentwert,
-# auf dem TFT-Display ausgibt.
-# Sobald bestimmte CO²-Werte erreicht sind, wird dies farblich auf dem
-# TFT-Display deutlich (Grün = alles Gut; Gelb = Langsam mal Lüften;
-# Rot = Schlecht, dringend Lüften).
-# Im nachfolgenden werden die Sensordaten über ein Netzwerk zu einem Broker (MQTT) geschickt.
-# Der Broker (MQTT) dient als Schnittstelle, wodurch die Sensordaten durch abonnieren des Brokkers
-# abgefragt werden können.
+"""Im folgenden Programm wird ein TFT-Display angesteuert.
+Welches die Ausgewerteten Sensorwert vom ENS160 in ppm,
+AHT21 in °C und des Capacitive Soil MoistureV2 in ein Prozentwert,
+auf dem TFT-Display ausgibt.
+Sobald bestimmte CO²-Werte erreicht sind, wird dies farblich auf dem
+TFT-Display deutlich (Grün = alles Gut; Gelb = Langsam mal Lüften;
+Rot = Schlecht, dringend Lüften).
+Im nachfolgenden werden die Sensordaten über ein Netzwerk zu einem Broker (MQTT) gesendet.
+Über Node-red werden die Sensordaten vom MQTT Brokervabgerufen und weiter verarbeitet.
+Zudem werden drei verschiedene Topic`s vom MQTT in diesem Code subscribe.
+Zwei Topic`s sind die für das erhalten der Grenzwerte für die Bodenfeuchtigkeit.
+Das dritte Topic ist für die Manuelle ansteuerung der Pumpe.
+
+Die Sensordaten werden alle 2 Sekunden zum MQTT gesendet um ein ca. Echtzeitwerden zu bilden.
+Alle 30 Sekunden werden diese Sensordaten für die Datenbank erneut gesendet"""
 
 #----------------------------------------------------------------------------------------------------
 
@@ -41,9 +46,9 @@ import vga2_16x32 as font								 # Schriftart für das Display
 from ahtx0 import AHT20									 # Bibliothek für AHT21 (Temperatur)
 from ens_160 import ENS160								 # Bibliothek für ENS160 (Luftqualität)
 import time												 # Zeitsteuerung
-import json												 # Script
+import json												 # Umwandeln auf JSON-Objekte 
 import network											 # Zugriff auf Netzwerkfunktionen
-from umqtt.simple import MQTTClient						 # zugriff auf MQTT
+from umqtt.simple import MQTTClient						 # Zugriff auf MQTT
 
 #------------------------------------------------------------------------------------------------------
 
@@ -70,104 +75,113 @@ tft = st7789.ST7789(
 
 # -I2C-Bus für ENS160 und AHT21
 
-i2c = SoftI2C(scl=Pin(4), sda=Pin(7))		 # Software-I2C
-sensor_ens160 = ENS160(i2c)					 # Initialisieren des ENS160 Sensors
-sensor_aht21 = AHT20(i2c)					 # Initialisieren des AHT21 Sensors
+i2c = SoftI2C(scl=Pin(4), sda=Pin(7))	 # Software-I2C
+sensor_ens160 = ENS160(i2c)				 # Initialisieren des ENS160 Sensors
+sensor_aht21 = AHT20(i2c)				 # Initialisieren des AHT21 Sensors
 
 # -ADC Capacitive Soil Moisture Sensor V2
 
-soil = ADC(Pin(5))					 # Variabel für den PIN 5 Eingang mit ADC (Analog-Digital-Converter)
-soil.atten(ADC.ATTN_11DB)			 # Lässt den Spannungsbereich 0 - 3.3V auf dem PIN 4 zu
-soil.width(ADC.WIDTH_12BIT)			 # Die Analogwerte werden in 12 Bit Auflösung: 0 - 4095
+soil = ADC(Pin(5))						 # Variabel für den PIN 5 Eingang mit ADC (Analog-Digital-Converter)
+soil.atten(ADC.ATTN_11DB)				 # Lässt den Spannungsbereich 0 - 3.3V auf dem PIN 4 zu
+soil.width(ADC.WIDTH_12BIT)				 # Die Analogwerte werden in 12 Bit Auflösung: 0 - 4095
 
 # -Variabel für Pumpe
 
-pumpe = Pin(8,Pin.OUT)						 # Pin für High(1) bzw Low(0) für die Pumpe
-pumpe_on = False
+pumpe = Pin(8,Pin.OUT)					 # Pin für High(1) bzw Low(0) für die Pumpe
+
+# -Globale Variabeln
+
+oberergrenzwert = 0						 # Globale Variabel Wert 0 geben 
+unterergrenzwert = 0					 # Globale Variabel Wert 0 geben  
+pumpe_on = False						 # Globale Variabel auf False setzen
 
 # WLAN-Verbindung herstellen
-SSID = "Holzmodem1884"					 # Wlan "Name"
-PASSWORD = "Lassmichein123"				 # Passwort des Wlan
+SSID = "FRITZ!Box 7510 JA"				 # Wlan "Name"
+PASSWORD = "64289268918123448784"		 # Passwort des Wlan
 
 wlan = network.WLAN(network.STA_IF)		 # Wlan-Client erzeugen
 wlan.active(False)						 # Wlan Reset
 wlan.active(True)						 # Wlan einschalten
 
 if not wlan.isconnected():				 # Testen der WLAN Verbindung
-    wlan.connect(SSID, PASSWORD)
+    wlan.connect(SSID, PASSWORD)		 # Mit dem Wlan verbinden
     while not wlan.isconnected():
-        print("Verbinde mit WLAN...")
+        print("Verbinde mit WLAN...")	 # Wenn noch keine Verbindung hergestellt ist
         time.sleep(1)
 
 
 print("WLAN verbunden:", wlan.ifconfig()) # Konfigurationsdaten vom Wlan
 
 # MQTT-Konfiguration
-BROKER = "192.168.178.78"  				 # IP-Adresse des Brokers (Laptop,PC)
+BROKER = "192.168.178.122"  			 # IP-Adresse des Brokers (Laptop,PC)
 PORT = 1883								 # Port definieren
 CLIENT_ID = "JLB"						 # Client-Id vom MQTT
-TOPIC1 = "Pflanze/Auto/Bewaesserung"	 # Topic des MQTT Broker
-TOPIC2 = b"Pump/EIN/AUS"					 # Topic
-TOPIC3 = "Datenbank"
-TOPIC4 = b"Untererschwellenwert"
-TOPIC5 = b"Obererschwellenwert"
-
-print("Mit MQTT-Broker verbunden.")
-
+TOPIC1 = "Pflanze/Auto/Bewaesserung"	 # Topic für Sensordaten "Echtzeit"
+TOPIC3 = "Datenbank"					 # Topic für Sensordaten für die Datenbank
+TOPIC4 = b"Untererschwellenwert"		 # Topic für Grenzwert Bodenfeuchtigkeit 
+TOPIC5 = b"Obererschwellenwert"			 # Topic für Grenzwert Bodenfeuchtigkeit
+TOPIC2 = b"Pump/EIN/AUS"				 # Topic für manuelle Ansteuerung
 
 #----------------------------------------------Funktionen---------------------------------------------
 
-oberergrenzwert = 0 
-unterergrenzwert = 0 
+# -Funktion für callback der Topic`s
+#  vergleichen vom MQTT topic und den Variabeln TOPIC
 
-def mqtt_callback(topic, msg):
+def mqtt_callback(topic, msg):			 # Funktion definieren
+    
     if topic == TOPIC5:
         sub_oberergrenzwert(topic, msg)
+        
     elif topic == TOPIC2:
         sub_pumpe(topic, msg)
+        
     elif topic == TOPIC4:
         sub_untergrenzwert(topic, msg)
 
+# -Funktion zur Auswertung der MQTT-Message vom Topic Pumpe/EIN/AUS
 
-# -Funktion zur Auswertung der MQTT-Message
-
-def sub_pumpe(topic, msg):
+def sub_pumpe(topic, msg):				 # Funktion definieren
     
-    daten = json.loads(msg)
+    daten = json.loads(msg)				 # msg in JSON-Format wandeln
     print(daten)
-    schalter = daten.get('Schalter')# Alternativ: schalter = (daten['Schalter']) 
+    schalter = daten.get('Schalter')	 # Wert "ON" aus der Variabel "daten" erhalten
     print(schalter)
-    if schalter == 'ON':# Pumpe einschalten     
+    if schalter == 'ON':				 # Pumpe einschalten     
  
-        global pumpe_on					 # Wichtig: Globale Variable nutzen und keine neue Variable erzeugen
+        global pumpe_on					 # Globale Variable definieren 
          
-        pumpe_on = True
+        pumpe_on = True					 # Globale Variable auf True setzen
 
     else:								 # sonst ausschalten
-        global pumpe_on 
-        pumpe_on = False 
+        global pumpe_on
+        
+        pumpe_on = False 				 # Globale Variable aus False setzen
 
-    
+# -Funktion zur Auswertung der MQTT-Message vom Topic Obererschwellenwert
 
-def sub_oberergrenzwert(topic, msg):
+def sub_oberergrenzwert(topic, msg):	 # Funktion definieren
     
-    daten = json.loads(msg)
+    daten = json.loads(msg)				 # msg in JSON-Format wandeln
     print(daten)
-    wert = daten.get('oberergrenzwert')# Alternativ: schalter = (daten['Schalter']) 
+    wert = daten.get('oberergrenzwert')	 # Wert aus der Variabel daten erhalten
     print("Wert:",wert)
     
-    global oberergrenzwert
-    oberergrenzwert = wert
-
-def sub_untergrenzwert(topic, msg):
+    global oberergrenzwert				 # Globale Variable definieren
     
-    daten = json.loads(msg)
+    oberergrenzwert = wert				 # Globale Variabel nimmt den Wert von der Variabel Wert an
+
+# -Funktion zur Auswertung der MQTT-Message vom Topic Untererschwellenwert
+
+def sub_untergrenzwert(topic, msg):		 # Funktion definieren
+    
+    daten = json.loads(msg)				 # msg in JSON-Format wandeln
     print(daten)
-    wert = daten.get('unterergrenzwert')# Alternativ: schalter = (daten['Schalter']) 
+    wert = daten.get('unterergrenzwert') # Wert aus der Variabel daten erhalten 
     print("Wert:",wert)
     
-    global unterergrenzwert
-    unterergrenzwert = wert
+    global unterergrenzwert				 # Globale Variable definieren
+    
+    unterergrenzwert = wert				 # Globale Variabel nimmt den Wert von der Variabel Wert an
 
 # -Funktion Spannung in Prozent umrechnen
 #  Eingabe: Spannung in Volt
@@ -179,28 +193,31 @@ def prozentualerbereich(spannung, nass = 1.0, trocken = 2.7):			 # Bedinung für
 
 # -Funktionen zum Ein/Ausschalten der Pumpe
 
-def pumpe_ein():
-    pumpe.value(1)
+def pumpe_ein():						 # Funktion definieren
+    pumpe.value(1)						 # Variable pumpe auf 1 setzen
 
-def pumpe_aus():
-    pumpe.value(0)
+def pumpe_aus():						 # Funktion definieren
+    pumpe.value(0)						 # Variable pumpe auf 0 setzen
 
 # -Funktion für Displayfarbe und Displaytext 
 
-def display_farbe(st_farbe, temp, co2, prozent):
+def display_farbe(st_farbe, temp, co2, prozent):									 # Funktion definieren
     
     tft.fill(st_farbe)
     tft.text(font, "Werte:", 10, 40, st7789.BLACK, st_farbe)
     tft.text(font, "Temp:{} C".format(temp), 10, 80, st7789.BLACK, st_farbe)
     tft.text(font, "Luft:{} ppm".format(co2), 10, 120, st7789.BLACK, st_farbe)
     
-    tft.fill_rect(10, 160, 200, 32, st_farbe)				 # Löscht den alten Textbereich
+    tft.fill_rect(10, 160, 200, 32, st_farbe)										 # Löscht den alten Textbereich
     tft.text(font, "Boden:{} %".format(prozent), 10, 160, st7789.BLACK, st_farbe)
 
 # MQTT-Client einrichten
+
 client = MQTTClient(CLIENT_ID, BROKER, PORT, keepalive = 30)
 client.set_callback(mqtt_callback)
 client.connect()
+print("Mit MQTT-Broker verbunden.")
+
 client.subscribe(TOPIC2)
 client.subscribe(TOPIC5)
 client.subscribe(TOPIC4)
@@ -226,33 +243,33 @@ while True:														 # Dauerschleife zur regelmäßigen Datenerfassung
     
     #--------Daten für MQTT bereit machen und senden--------
         
-    sensor_daten = {"Bodenfeuchtigkeit": prozent, "Luftqualitaet": co2, "Temperatur": temp}	 # Sensor daten für JSON vorbereiten
+    sensor_daten = {"Bodenfeuchtigkeit": prozent, "Luftqualitaet": co2, "Temperatur": temp, "Pumpe": pumpe.value()}	 # Sensor daten für JSON vorbereiten
         
     json_string = json.dumps(sensor_daten)														 # Json-String erstellen
     
     #--------Pumpe EIN/AUS Automatisch oder Manuell--------
             
-    if pumpe_on is False :
+    if pumpe_on is False :											 # Bedingung der globalen Variabel
         
-        if prozent >= oberergrenzwert:											 # Bodenfeuchtigkeit über 60%
+        if prozent >= oberergrenzwert:								 # Bodenfeuchtigkeit über 60%
             pumpe_aus()												 # pumpe auf 0 setzen
     
-        elif prozent < unterergrenzwert:											 # Bodenfeuchtigkeit unter 40%
+        elif prozent < unterergrenzwert:							 # Vergleichen von prozent und Unterergrenzwert 
             pumpe_ein()												 # pumpe auf 1 setzen
                 
-    else:
+    else:															 # Sonst andere Bedingungen
         if pumpe_on:
-            pumpe_ein()
+            pumpe_ein()												 # Funktion ausführen
         
         else:
-            pumpe_aus()
+            pumpe_aus()												 # Funktion ausführen
     
-    if time.ticks_diff(aktuellezeit, startzeit2) >= 30000:
+    if time.ticks_diff(aktuellezeit, startzeit2) >= 30000:			 # Zeit festlegen 30 Sekunden
         
         # Versuch von daten als JSON Format zum Brokker zu senden  
         try:
             
-            client.publish(TOPIC3, json_string)
+            client.publish(TOPIC3, json_string)						 # Nachricht an MQTT senden
             print(f"Nachricht gesendet Datenbank: {json_string}")
         
         # Fehlermeldung beim Senden der MQTT-Nachricht ausgeben
@@ -272,13 +289,13 @@ while True:														 # Dauerschleife zur regelmäßigen Datenerfassung
         startzeit2 = aktuellezeit									 # Startzeit zurücksetzen
                 
                 
-    if time.ticks_diff(aktuellezeit, startzeit) >= 5000:				 # Messung alle 5 Sekunden ausführen
+    if time.ticks_diff(aktuellezeit, startzeit) >= 2000:			 # Messung alle 2 Sekunden ausführen
     
         print("Luftqualität",co2,"%","Temperatur", temp,"°C","Spannung",
               round(spannung,2),"V","Bodenfeuchte",round (prozent,2),"%") # Werte zur Kontrolle in der Kommandozeile ausgeben
         print("")														  # Leere Spalte in Komandozeile einfügen
         
-        #--------Daten auf dem TFT-Display anzeigen lassen--------
+        #--------Displayfarbe bestimmen--------
         
         if co2 < 600:            
             display_farbe(st7789.GREEN, temp, co2, prozent)
@@ -286,18 +303,12 @@ while True:														 # Dauerschleife zur regelmäßigen Datenerfassung
             display_farbe(st7789.YELLOW, temp, co2, prozent)
         else:
             display_farbe(st7789.RED, temp, co2, prozent)
-        
-        #if unterergrenzwert is not None :
-        
-           # print(unterergrenzwert)
-        #else:
-            #print("keine Nachricht vorhanden")
 
          
         # Versuch von daten als JSON Format zum Brokker zu senden  
         try:
             
-            client.publish(TOPIC1, json_string)
+            client.publish(TOPIC1, json_string)						 # Nachricht an MQTT senden
             print(f"Nachricht gesendet: {json_string}")
         
         # Fehlermeldung beim Senden der MQTT-Nachricht ausgeben
