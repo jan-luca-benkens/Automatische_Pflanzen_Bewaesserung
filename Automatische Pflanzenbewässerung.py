@@ -2,7 +2,7 @@
 
 # Erstellungsdatum: 22.04.2025
 # Änderungsdatum: 04.05.2025
-# Änderungsnummer: 1.7
+# Änderungsnummer: 1.8
 # Programm: Automatische Pflanzenbewässerung
 # Programmierer: Benkens Jan-Luca
 
@@ -88,6 +88,8 @@ soil.width(ADC.WIDTH_12BIT)				 # Die Analogwerte werden in 12 Bit Auflösung: 0
 # -Variabel für Pumpe
 
 pumpe = Pin(8,Pin.OUT)					 # Pin für High(1) bzw Low(0) für die Pumpe
+
+pumpen_status = 'Kein Zustand vorhanden'
 
 # -Globale Variabeln
 
@@ -235,7 +237,7 @@ while True:														 # Dauerschleife zur regelmäßigen Datenerfassung
     client.check_msg() 											 # Warten, bis eine neue Nachricht vorliegt.
 
     aktuellezeit = time.ticks_ms()
-    
+    #------- Abfragen der Sensoren-------
     spannung = soil.read() / 4095 * 3.3								 # Bodenfeuchtigkeit in Volt umrechnen        
     prozent = round (prozentualerbereich(spannung),0)				 # Umrechnung in Prozent        
     co2 = sensor_ens160.get_eco2()									 # CO²-Messung (eCO²) vom ENS160        
@@ -243,7 +245,7 @@ while True:														 # Dauerschleife zur regelmäßigen Datenerfassung
     
     #--------Daten für MQTT bereit machen und senden--------
         
-    sensor_daten = {"Bodenfeuchtigkeit": prozent, "Luftqualitaet": co2, "Temperatur": temp, "Pumpe": pumpe.value()}	 # Sensor daten für JSON vorbereiten
+    sensor_daten = {"Bodenfeuchtigkeit": prozent, "Luftqualitaet": co2, "Temperatur": temp, "Pumpe": pumpen_status}	 # Sensor daten für JSON vorbereiten
         
     json_string = json.dumps(sensor_daten)														 # Json-String erstellen
     
@@ -253,16 +255,19 @@ while True:														 # Dauerschleife zur regelmäßigen Datenerfassung
         
         if prozent >= oberergrenzwert:								 # Bodenfeuchtigkeit über 60%
             pumpe_aus()												 # pumpe auf 0 setzen
+            pumpen_status = 'Pumpe ist Ausgeschaltet'
     
         elif prozent < unterergrenzwert:							 # Vergleichen von prozent und Unterergrenzwert 
             pumpe_ein()												 # pumpe auf 1 setzen
-                
+            pumpen_status = 'Pumpe ist Eingeschaltet'    
     else:															 # Sonst andere Bedingungen
         if pumpe_on:
             pumpe_ein()												 # Funktion ausführen
         
         else:
             pumpe_aus()												 # Funktion ausführen
+    
+    #--------Senden der Sensordaten für die Datenbank------
     
     if time.ticks_diff(aktuellezeit, startzeit2) >= 30000:			 # Zeit festlegen 30 Sekunden
         
@@ -288,21 +293,24 @@ while True:														 # Dauerschleife zur regelmäßigen Datenerfassung
             
         startzeit2 = aktuellezeit									 # Startzeit zurücksetzen
                 
-                
-    if time.ticks_diff(aktuellezeit, startzeit) >= 2000:			 # Messung alle 2 Sekunden ausführen
+    #--------Senden der Sensordaten für die Echtzeitanzeige------
+    
+    if time.ticks_diff(aktuellezeit, startzeit) >= 1000:			 # Messung jede Sekunden ausführen
     
         print("Luftqualität",co2,"%","Temperatur", temp,"°C","Spannung",
-              round(spannung,2),"V","Bodenfeuchte",round (prozent,2),"%") # Werte zur Kontrolle in der Kommandozeile ausgeben
-        print("")														  # Leere Spalte in Komandozeile einfügen
+              round(spannung,2),"V","Bodenfeuchte",round (prozent,2),"%")	 # Werte zur Kontrolle in der Kommandozeile ausgeben
+        print("")															 # Leere Spalte in Komandozeile einfügen
         
         #--------Displayfarbe bestimmen--------
         
-        if co2 < 600:            
-            display_farbe(st7789.GREEN, temp, co2, prozent)
-        elif co2 < 1000:
-            display_farbe(st7789.YELLOW, temp, co2, prozent)
-        else:
-            display_farbe(st7789.RED, temp, co2, prozent)
+        if co2 < 600:														 # CO²-Wertebereich bis 600ppm            
+            display_farbe(st7789.GREEN, temp, co2, prozent)					 # Displayfarbe Grün (CO²-Wert ist Gut)
+            
+        elif co2 < 1000:													 # CO²-Wertebereich von 601 bis 1000ppm
+            display_farbe(st7789.YELLOW, temp, co2, prozent)				 # Displayfarbe Gelb (CO²-Wert ist Okay)
+            
+        else:																 # CO²-Wertebereich über 1000ppm
+            display_farbe(st7789.RED, temp, co2, prozent)					 # Displayfarbe Rot (CO²-Wert ist Schlecht)
 
          
         # Versuch von daten als JSON Format zum Brokker zu senden  
