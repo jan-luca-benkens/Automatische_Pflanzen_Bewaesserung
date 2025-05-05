@@ -1,8 +1,8 @@
 #----------------------------------------------Eckdaten---------------------------------------------
 
 # Erstellungsdatum: 22.04.2025
-# Änderungsdatum: 04.05.2025
-# Änderungsnummer: 1.8
+# Änderungsdatum: 05.05.2025
+# Änderungsnummer: 1.9
 # Programm: Automatische Pflanzenbewässerung
 # Programmierer: Benkens Jan-Luca
 
@@ -67,21 +67,21 @@ spi = SPI(1,
 tft = st7789.ST7789(
     spi,
     240, 320,							 # Auflösung des Displays
-    reset = Pin(38,Pin.OUT),			 # Reset-Pin
-    cs = Pin(40, Pin.OUT),				 # Chip-Select
-    dc = Pin(42, Pin.OUT),				 # Daten-/Command-Pin
+    reset = Pin(37,Pin.OUT),			 # Reset-Pin
+    cs = Pin(39, Pin.OUT),				 # Chip-Select
+    dc = Pin(38, Pin.OUT),				 # Daten-/Command-Pin
     backlight = Pin(0, Pin.OUT),		 # Hintergrundbeleuchtung
     rotation = 4)						 # Anzeigeausrichtung
 
 # -I2C-Bus für ENS160 und AHT21
 
-i2c = SoftI2C(scl=Pin(4), sda=Pin(7))	 # Software-I2C
+i2c = SoftI2C(scl=Pin(7), sda=Pin(6))	 # Software-I2C
 sensor_ens160 = ENS160(i2c)				 # Initialisieren des ENS160 Sensors
 sensor_aht21 = AHT20(i2c)				 # Initialisieren des AHT21 Sensors
 
 # -ADC Capacitive Soil Moisture Sensor V2
 
-soil = ADC(Pin(5))						 # Variabel für den PIN 5 Eingang mit ADC (Analog-Digital-Converter)
+soil = ADC(Pin(10))						 # Variabel für den PIN 5 Eingang mit ADC (Analog-Digital-Converter)
 soil.atten(ADC.ATTN_11DB)				 # Lässt den Spannungsbereich 0 - 3.3V auf dem PIN 4 zu
 soil.width(ADC.WIDTH_12BIT)				 # Die Analogwerte werden in 12 Bit Auflösung: 0 - 4095
 
@@ -263,10 +263,12 @@ while True:														 # Dauerschleife zur regelmäßigen Datenerfassung
     else:															 # Sonst andere Bedingungen
         if pumpe_on:
             pumpe_ein()												 # Funktion ausführen
-        
+            pumpen_status = 'Pumpe ist Eingeschaltet'
+            
         else:
             pumpe_aus()												 # Funktion ausführen
-    
+            pumpen_status = 'Pumpe ist Ausgeschaltet'
+            
     #--------Senden der Sensordaten für die Datenbank------
     
     if time.ticks_diff(aktuellezeit, startzeit2) >= 30000:			 # Zeit festlegen 30 Sekunden
