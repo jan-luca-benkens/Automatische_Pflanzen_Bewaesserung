@@ -1,8 +1,8 @@
 #----------------------------------------------Eckdaten---------------------------------------------
 
 # Erstellungsdatum: 22.04.2025
-# Änderungsdatum: 05.05.2025
-# Änderungsnummer: 1.9
+# Änderungsdatum: 06.05.2025
+# Änderungsnummer: 2.0
 # Programm: Automatische Pflanzenbewässerung
 # Programmierer: Benkens Jan-Luca
 
@@ -98,8 +98,8 @@ unterergrenzwert = 0					 # Globale Variabel Wert 0 geben
 pumpe_on = False						 # Globale Variabel auf False setzen
 
 # WLAN-Verbindung herstellen
-SSID = "FRITZ!Box 7510 JA"				 # Wlan "Name"
-PASSWORD = "64289268918123448784"		 # Passwort des Wlan
+SSID = "XXXX"				 # Wlan "Name"
+PASSWORD = "XXXX"		 # Passwort des Wlan
 
 wlan = network.WLAN(network.STA_IF)		 # Wlan-Client erzeugen
 wlan.active(False)						 # Wlan Reset
@@ -271,7 +271,7 @@ while True:														 # Dauerschleife zur regelmäßigen Datenerfassung
             
     #--------Senden der Sensordaten für die Datenbank------
     
-    if time.ticks_diff(aktuellezeit, startzeit2) >= 30000:			 # Zeit festlegen 30 Sekunden
+    if time.ticks_diff(aktuellezeit, startzeit2) >= 60000:			 # Zeit festlegen 60 Sekunden
         
         # Versuch von daten als JSON Format zum Brokker zu senden  
         try:
