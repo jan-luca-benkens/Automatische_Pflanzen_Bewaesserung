@@ -1,0 +1,970 @@
+[
+    {
+        "id": "6c2852b4f11f8f22",
+        "type": "tab",
+        "label": "Automatische Pflanzenbewässerung",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "f0409d51b170e2ca",
+        "type": "mqtt in",
+        "z": "6c2852b4f11f8f22",
+        "name": "",
+        "topic": "Pflanze/Auto/Bewaesserung",
+        "qos": "0",
+        "datatype": "auto-detect",
+        "broker": "e753a3999631516c",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 640,
+        "y": 340,
+        "wires": [
+            [
+                "47b173ccc33b88d5",
+                "5492a88f9b0570ab",
+                "04a0c06d60ad9d70",
+                "d4da8febfa8e1c4e"
+            ]
+        ]
+    },
+    {
+        "id": "f1fed3198c080592",
+        "type": "ui_gauge",
+        "z": "6c2852b4f11f8f22",
+        "name": "",
+        "group": "0606d44726ec54fa",
+        "order": 2,
+        "width": 7,
+        "height": 5,
+        "gtype": "gage",
+        "title": "Raum Temperatur",
+        "label": "°C",
+        "format": "{{msg.payload1}}",
+        "min": 0,
+        "max": "100",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "diff": false,
+        "className": "",
+        "x": 1290,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "47b173ccc33b88d5",
+        "type": "function",
+        "z": "6c2852b4f11f8f22",
+        "name": "Temperatur",
+        "func": "msg.payload1 = msg.payload.Temperatur;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 990,
+        "y": 280,
+        "wires": [
+            [
+                "f1fed3198c080592"
+            ]
+        ]
+    },
+    {
+        "id": "5492a88f9b0570ab",
+        "type": "function",
+        "z": "6c2852b4f11f8f22",
+        "name": "Luftqualitaet",
+        "func": "msg.payload2 = msg.payload.Luftqualitaet;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 990,
+        "y": 340,
+        "wires": [
+            [
+                "2ddf4d3862ae8bf9"
+            ]
+        ]
+    },
+    {
+        "id": "2ddf4d3862ae8bf9",
+        "type": "ui_gauge",
+        "z": "6c2852b4f11f8f22",
+        "name": "",
+        "group": "0606d44726ec54fa",
+        "order": 1,
+        "width": 7,
+        "height": 5,
+        "gtype": "gage",
+        "title": "Luftqualität",
+        "label": "ppm",
+        "format": "{{msg.payload2}}",
+        "min": 0,
+        "max": "1500",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "600",
+        "seg2": "1000",
+        "diff": false,
+        "className": "",
+        "x": 1270,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "04a0c06d60ad9d70",
+        "type": "function",
+        "z": "6c2852b4f11f8f22",
+        "name": "Bodenfeuchtigkeit",
+        "func": "msg.payload3 = msg.payload.Bodenfeuchtigkeit;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1010,
+        "y": 400,
+        "wires": [
+            [
+                "cfcee28d2775505e"
+            ]
+        ]
+    },
+    {
+        "id": "cfcee28d2775505e",
+        "type": "ui_gauge",
+        "z": "6c2852b4f11f8f22",
+        "name": "",
+        "group": "0606d44726ec54fa",
+        "order": 3,
+        "width": 7,
+        "height": 5,
+        "gtype": "gage",
+        "title": "Bodenfeuchtigkeit",
+        "label": "%",
+        "format": "{{msg.payload3}}",
+        "min": 0,
+        "max": "100",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "seg1": "",
+        "seg2": "",
+        "diff": false,
+        "className": "",
+        "x": 1290,
+        "y": 400,
+        "wires": []
+    },
+    {
+        "id": "5ea3fd5c85e156e3",
+        "type": "ui_switch",
+        "z": "6c2852b4f11f8f22",
+        "name": "",
+        "label": "Pumpe EIN/AUS",
+        "tooltip": "",
+        "group": "0606d44726ec54fa",
+        "order": 10,
+        "width": 10,
+        "height": 1,
+        "passthru": true,
+        "decouple": "false",
+        "topic": "topic",
+        "topicType": "msg",
+        "style": "",
+        "onvalue": "{\"Schalter\":\"ON\"}",
+        "onvalueType": "json",
+        "onicon": "",
+        "oncolor": "",
+        "offvalue": "{\"Schalter\":\"OFF\"}",
+        "offvalueType": "json",
+        "officon": "",
+        "offcolor": "",
+        "animate": false,
+        "className": "",
+        "x": 630,
+        "y": 860,
+        "wires": [
+            [
+                "85f470435a2bc40c"
+            ]
+        ]
+    },
+    {
+        "id": "85f470435a2bc40c",
+        "type": "mqtt out",
+        "z": "6c2852b4f11f8f22",
+        "name": "Schalter1",
+        "topic": "Pumpe/EIN/AUS",
+        "qos": "0",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "e753a3999631516c",
+        "x": 840,
+        "y": 860,
+        "wires": []
+    },
+    {
+        "id": "8edf97f282c7b549",
+        "type": "function",
+        "z": "6c2852b4f11f8f22",
+        "name": "Daten zur Datenbank",
+        "func": "let temperatur = msg.payload.Temperatur;\nlet luftqualitaet = msg.payload.Luftqualitaet;\nlet bodenfeuchtigkeit = msg.payload.Bodenfeuchtigkeit;\n\n//Tiemestamp erstellen und eine Stunde hinzufügen\nlet timestamp = new Date();\ntimestamp.setHours(timestamp.getHours() + 0);//abgeänderte Zeit +2 Stunden; für korrekte Zeit\n\n//Timestamp in einem Format, das SQLite verarbeiten kann (YYYY-MM-DD HH:MM:SS)\nlet formattedtimestamp = timestamp.toISOString().replace(\"T\", \" \").substring(0, 19);\n\nmsg.topic = \"INSERT INTO sensordaten_pflanzenbewaesserung (Zeitstempel, Temperatur, Luftqualitaet, Bodenfeuchtigkeit) VALUES (?, ?, ?, ?)\";\nmsg.payload = [timestamp, temperatur, luftqualitaet, bodenfeuchtigkeit];\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1040,
+        "y": 560,
+        "wires": [
+            [
+                "a8fa11319fa4c1ba"
+            ]
+        ]
+    },
+    {
+        "id": "a8fa11319fa4c1ba",
+        "type": "mysql",
+        "z": "6c2852b4f11f8f22",
+        "mydb": "175f78cfdd9d1855",
+        "name": "automatische_pflanzenbewaesserung",
+        "x": 1350,
+        "y": 620,
+        "wires": [
+            [
+                "64c0b3d78cce65c1",
+                "1676ef02e688104b",
+                "3ed5ced87163eba8"
+            ]
+        ]
+    },
+    {
+        "id": "eeb0ff1608ec9430",
+        "type": "function",
+        "z": "6c2852b4f11f8f22",
+        "name": "Daten von Datenbank",
+        "func": "msg.topic = \"SELECT * FROM sensordaten_pflanzenbewaesserung;\";\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1040,
+        "y": 680,
+        "wires": [
+            [
+                "a8fa11319fa4c1ba"
+            ]
+        ]
+    },
+    {
+        "id": "948b6e6d22a5e09e",
+        "type": "ui_button",
+        "z": "6c2852b4f11f8f22",
+        "name": "",
+        "group": "0606d44726ec54fa",
+        "order": 7,
+        "width": 10,
+        "height": 1,
+        "passthru": false,
+        "label": "Daten Aktualisieren",
+        "tooltip": "Lädt Daten von der Datenbank",
+        "color": "",
+        "bgcolor": "",
+        "className": "",
+        "icon": "fa-refresh",
+        "payload": "",
+        "payloadType": "str",
+        "topic": "topic",
+        "topicType": "msg",
+        "x": 630,
+        "y": 680,
+        "wires": [
+            [
+                "eeb0ff1608ec9430"
+            ]
+        ]
+    },
+    {
+        "id": "64c0b3d78cce65c1",
+        "type": "function",
+        "z": "6c2852b4f11f8f22",
+        "name": "Temperatur Daten",
+        "func": "const inp = Array.isArray(msg.payload) ? msg.payload : [msg.payload];\n\n\n// Diagrammobjekt vorbereiten\nvar outobj = [{\n    series: [\"automatische_pflanzenbewaesserung\"],\n    data: [[]],\n    labels: [\"\"]\n}];\n\n// Daten eintragen\nfor (let item of inp) {\n    outobj[0].data[0].push({\n        x: item.Zeitstempel,\n        y: item.Temperatur\n    });\n}\n\nmsg.payload = outobj;\nreturn msg;\n\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1730,
+        "y": 520,
+        "wires": [
+            [
+                "40caeff8aca49180"
+            ]
+        ]
+    },
+    {
+        "id": "1676ef02e688104b",
+        "type": "function",
+        "z": "6c2852b4f11f8f22",
+        "name": "Luftqualitaet Daten",
+        "func": "const inp = Array.isArray(msg.payload) ? msg.payload : [msg.payload];\n\n\n// Diagrammobjekt vorbereiten\nvar outobj = [{\n    series: [\"automatische_pflanzenbewaesserung\"],\n    data: [[]],\n    labels: [\"\"]\n}];\n\n// Daten eintragen\nfor (let item of inp) {\n    outobj[0].data[0].push({\n        x: item.Zeitstempel,\n        y: item.Luftqualitaet\n    });\n}\n\nmsg.payload = outobj;\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1730,
+        "y": 620,
+        "wires": [
+            [
+                "b00897f91f724a0b"
+            ]
+        ]
+    },
+    {
+        "id": "b00897f91f724a0b",
+        "type": "ui_chart",
+        "z": "6c2852b4f11f8f22",
+        "name": "",
+        "group": "0606d44726ec54fa",
+        "order": 4,
+        "width": 7,
+        "height": 5,
+        "label": "Luftqualitaet Diagramm",
+        "chartType": "line",
+        "legend": "false",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "Diagramm ist Ausgeblendet",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": 1,
+        "removeOlderPoints": "",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 2010,
+        "y": 620,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "3ed5ced87163eba8",
+        "type": "function",
+        "z": "6c2852b4f11f8f22",
+        "name": "Temperatur Daten",
+        "func": "const inp = Array.isArray(msg.payload) ? msg.payload : [msg.payload];\n\n\n// Diagrammobjekt vorbereiten\nvar outobj = [{\n    series: [\"automatische_pflanzenbewaesserung\"],\n    data: [[]],\n    labels: [\"\"]\n}];\n\n// Daten eintragen\nfor (let item of inp) {\n    outobj[0].data[0].push({\n        x: item.Zeitstempel,\n        y: item.Bodenfeuchtigkeit\n    });\n}\n\nmsg.payload = outobj;\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1730,
+        "y": 720,
+        "wires": [
+            [
+                "ad2cbad2a74bd42e"
+            ]
+        ]
+    },
+    {
+        "id": "ad2cbad2a74bd42e",
+        "type": "ui_chart",
+        "z": "6c2852b4f11f8f22",
+        "name": "",
+        "group": "0606d44726ec54fa",
+        "order": 6,
+        "width": 7,
+        "height": 5,
+        "label": "Bodenfeuchtigkeit Diagramm",
+        "chartType": "line",
+        "legend": "false",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "Diagramm ist Ausgeblendet",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": 1,
+        "removeOlderPoints": "",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 2020,
+        "y": 720,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "12c80eac63bbe98a",
+        "type": "ui_button",
+        "z": "6c2852b4f11f8f22",
+        "name": "",
+        "group": "0606d44726ec54fa",
+        "order": 9,
+        "width": 10,
+        "height": 1,
+        "passthru": false,
+        "label": "Diagramme Ausblenden",
+        "tooltip": "Lässt das Diagramme Ausblenden",
+        "color": "",
+        "bgcolor": "red",
+        "className": "",
+        "icon": "fa-button",
+        "payload": "[]",
+        "payloadType": "json",
+        "topic": "topic",
+        "topicType": "msg",
+        "x": 1730,
+        "y": 840,
+        "wires": [
+            [
+                "b00897f91f724a0b",
+                "ad2cbad2a74bd42e",
+                "40caeff8aca49180"
+            ]
+        ]
+    },
+    {
+        "id": "0290ef7b8aa1ef77",
+        "type": "mqtt in",
+        "z": "6c2852b4f11f8f22",
+        "name": "",
+        "topic": "Datenbank/Sensoren/Werte",
+        "qos": "0",
+        "datatype": "auto-detect",
+        "broker": "e753a3999631516c",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 660,
+        "y": 560,
+        "wires": [
+            [
+                "8edf97f282c7b549"
+            ]
+        ]
+    },
+    {
+        "id": "3f3f2b6ee48be1ae",
+        "type": "ui_numeric",
+        "z": "6c2852b4f11f8f22",
+        "name": "",
+        "label": "Unterergrenzwert",
+        "tooltip": "Grenzwert zur Abschaltung der Pumpe",
+        "group": "0606d44726ec54fa",
+        "order": 14,
+        "width": 10,
+        "height": 1,
+        "wrap": false,
+        "passthru": true,
+        "topic": "topic",
+        "topicType": "msg",
+        "format": "{{msg.payload}}%",
+        "min": 0,
+        "max": "100",
+        "step": "5",
+        "className": "",
+        "x": 630,
+        "y": 1000,
+        "wires": [
+            [
+                "45d9961bd4cdf954"
+            ]
+        ]
+    },
+    {
+        "id": "ed2a27eebc0e8ffa",
+        "type": "ui_numeric",
+        "z": "6c2852b4f11f8f22",
+        "name": "",
+        "label": "Oberergrenzwert",
+        "tooltip": "Grenzwert zum Einschaltung der Pumpe",
+        "group": "0606d44726ec54fa",
+        "order": 16,
+        "width": 10,
+        "height": 1,
+        "wrap": false,
+        "passthru": true,
+        "topic": "topic",
+        "topicType": "msg",
+        "format": "{{msg.payload}}%",
+        "min": 0,
+        "max": "100",
+        "step": "5",
+        "className": "",
+        "x": 630,
+        "y": 1060,
+        "wires": [
+            [
+                "5f29e7257e229967"
+            ]
+        ]
+    },
+    {
+        "id": "ef288e823c01a988",
+        "type": "mqtt out",
+        "z": "6c2852b4f11f8f22",
+        "name": "",
+        "topic": "Obererschwellenwert",
+        "qos": "0",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "e753a3999631516c",
+        "x": 1440,
+        "y": 1060,
+        "wires": []
+    },
+    {
+        "id": "f296620d34d87375",
+        "type": "mqtt out",
+        "z": "6c2852b4f11f8f22",
+        "name": "",
+        "topic": "Untererschwellenwert",
+        "qos": "0",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "e753a3999631516c",
+        "x": 1440,
+        "y": 1000,
+        "wires": []
+    },
+    {
+        "id": "40caeff8aca49180",
+        "type": "ui_chart",
+        "z": "6c2852b4f11f8f22",
+        "name": "",
+        "group": "0606d44726ec54fa",
+        "order": 5,
+        "width": 7,
+        "height": 5,
+        "label": "Temperatur Diagramm",
+        "chartType": "line",
+        "legend": "false",
+        "xformat": "HH:mm",
+        "interpolate": "linear",
+        "nodata": "Diagramm ist Ausgeblendet",
+        "dot": false,
+        "ymin": "",
+        "ymax": "",
+        "removeOlder": 1,
+        "removeOlderPoints": "",
+        "removeOlderUnit": "3600",
+        "cutout": 0,
+        "useOneColor": false,
+        "useUTC": false,
+        "colors": [
+            "#1f77b4",
+            "#aec7e8",
+            "#ff7f0e",
+            "#2ca02c",
+            "#98df8a",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "outputs": 1,
+        "useDifferentColor": false,
+        "className": "",
+        "x": 2000,
+        "y": 520,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "5f29e7257e229967",
+        "type": "function",
+        "z": "6c2852b4f11f8f22",
+        "name": "Oberergrenzwert in JSON-Format",
+        "func": "let wert = msg.payload;\n\nmsg.payload = {\n    \"oberergrenzwert\": wert\n};\n\nreturn msg;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1080,
+        "y": 1060,
+        "wires": [
+            [
+                "ef288e823c01a988"
+            ]
+        ]
+    },
+    {
+        "id": "45d9961bd4cdf954",
+        "type": "function",
+        "z": "6c2852b4f11f8f22",
+        "name": "Unterergrenzwert in JSON-Format",
+        "func": "let wert = msg.payload;\n\nmsg.payload = {\n    \"unterergrenzwert\": wert\n};\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1080,
+        "y": 1000,
+        "wires": [
+            [
+                "f296620d34d87375"
+            ]
+        ]
+    },
+    {
+        "id": "4cb40d8f8170142b",
+        "type": "ui_text",
+        "z": "6c2852b4f11f8f22",
+        "group": "0606d44726ec54fa",
+        "order": 12,
+        "width": 10,
+        "height": 1,
+        "name": "",
+        "label": "Pumpen Zustand",
+        "format": "{{msg.payload5}}",
+        "layout": "row-left",
+        "className": "",
+        "style": false,
+        "font": "Arial,Arial,Helvetica,sans-serif",
+        "fontSize": 16,
+        "color": "#000000",
+        "x": 1290,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "d4da8febfa8e1c4e",
+        "type": "function",
+        "z": "6c2852b4f11f8f22",
+        "name": "Pumpen Zustand",
+        "func": "msg.payload5 = msg.payload.Pumpe;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1010,
+        "y": 220,
+        "wires": [
+            [
+                "4cb40d8f8170142b"
+            ]
+        ]
+    },
+    {
+        "id": "adc54c1b12a1b183",
+        "type": "comment",
+        "z": "6c2852b4f11f8f22",
+        "name": "Grenzwerte für die Bodenfeuchtigkeit einstellen",
+        "info": "Über die Nummericbausteine kann in fünfer Schritte über die Pfeile oder über Manuelle eingabe die Grenzwerte festgelgt werden.",
+        "x": 720,
+        "y": 960,
+        "wires": []
+    },
+    {
+        "id": "03e78c2df90b8cc0",
+        "type": "comment",
+        "z": "6c2852b4f11f8f22",
+        "name": "Senden des Schalter Zustandes",
+        "info": "Der Zustand des Schalter wird als JSON-Format zum MQTT Broker bei Veränderung des Schalterzustandes gesendet.",
+        "x": 670,
+        "y": 800,
+        "wires": []
+    },
+    {
+        "id": "07f67a43c6518450",
+        "type": "comment",
+        "z": "6c2852b4f11f8f22",
+        "name": "Empfangen von Sensordaten von MQTT",
+        "info": "",
+        "x": 700,
+        "y": 520,
+        "wires": []
+    },
+    {
+        "id": "24034a1fbeb7d25d",
+        "type": "comment",
+        "z": "6c2852b4f11f8f22",
+        "name": "Speichern der Daten in einer Datenbank",
+        "info": "Die Sensordaten werden hier alle 30 Sekunden in eine Datenbank gesendet.",
+        "x": 1350,
+        "y": 560,
+        "wires": []
+    },
+    {
+        "id": "36c52af011d8261e",
+        "type": "comment",
+        "z": "6c2852b4f11f8f22",
+        "name": "Visualisieren der Daten aus der Datenbank",
+        "info": "Die Charts-Bausteine sind dafür da um die vorbereiteten Daten in einem Chartdiagramm zu visualisieren.\n",
+        "x": 2060,
+        "y": 480,
+        "wires": []
+    },
+    {
+        "id": "d0256841c3a9d99d",
+        "type": "comment",
+        "z": "6c2852b4f11f8f22",
+        "name": "Empfangen von Sensordaten von MQTT",
+        "info": "",
+        "x": 640,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "2c2a230b28a30abb",
+        "type": "comment",
+        "z": "6c2852b4f11f8f22",
+        "name": "Visualisieren der einzelnen Sensordaten",
+        "info": "Die Einzelnen Funktionen dienen dazu um aus der JSON-Nachricht die benötigten Werte zu bekommen.",
+        "x": 1030,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "ce6ce26eca1413da",
+        "type": "comment",
+        "z": "6c2852b4f11f8f22",
+        "name": "Die einzelnen Sensordaten werden Visualisiert",
+        "info": "Der Pumpen Status wird als Text angezeigt \"Pumpe Eingeschaltet\" oder Pumpe Ausgeschaltet\".\nDie Raum Temperatur, sowie Luftqualität und Bodenfeuchtigkeit werden in einem jewiligen Gauge visualisiert.",
+        "x": 1370,
+        "y": 160,
+        "wires": []
+    },
+    {
+        "id": "c611cd204d92cc9f",
+        "type": "comment",
+        "z": "6c2852b4f11f8f22",
+        "name": "Daten vorbereiten für die Datenbank",
+        "info": "In dieser Funktion werden die einzelnen Sensordaten für das versenden an die Datenbank vorbereitet.\nZudem wird ein Zeitstempel mit vorbereitet um eine Zeitliche Nachverfolgung zu ermöglichen.",
+        "x": 1060,
+        "y": 520,
+        "wires": []
+    },
+    {
+        "id": "7056f0c6c4921e60",
+        "type": "comment",
+        "z": "6c2852b4f11f8f22",
+        "name": "Daten aus der Datenbank erhalten",
+        "info": "Diese Funktion ermöglicht es die vorher gespeicherten Sensordaten aus der Daten Bank zu bekommen",
+        "x": 1020,
+        "y": 640,
+        "wires": []
+    },
+    {
+        "id": "3c846077e90ecde5",
+        "type": "comment",
+        "z": "6c2852b4f11f8f22",
+        "name": "Vorbereiten der Sensordaten für visualisieren",
+        "info": "Diese Funktionen dien für das Vorbereiten der einzelnen Daten aus der Datenbank für die Visualisierung.\nDes weiteren werden hier die X und Y Achsen beschriftungen bestimmt.",
+        "x": 1690,
+        "y": 480,
+        "wires": []
+    },
+    {
+        "id": "331aeba61307020e",
+        "type": "comment",
+        "z": "6c2852b4f11f8f22",
+        "name": "Diagramme werden ausgeblendet",
+        "info": "",
+        "x": 1710,
+        "y": 780,
+        "wires": []
+    },
+    {
+        "id": "835b825fa7db9847",
+        "type": "comment",
+        "z": "6c2852b4f11f8f22",
+        "name": "JSON-Objekt erstellen",
+        "info": "Da die Nummeric-Bausteine eine Integerzahl ausgibt, werden über diese Funktionen die Integer zahlen in ein JSON-Objekt formatiert.",
+        "x": 1080,
+        "y": 960,
+        "wires": []
+    },
+    {
+        "id": "773d20b20ed5068c",
+        "type": "comment",
+        "z": "6c2852b4f11f8f22",
+        "name": "Senden der JSON-Objekte",
+        "info": "Hier werden die JSON-Objekte an MQTT gesendet.",
+        "x": 1470,
+        "y": 960,
+        "wires": []
+    },
+    {
+        "id": "a85cd54d99d32232",
+        "type": "ui_spacer",
+        "z": "6c2852b4f11f8f22",
+        "name": "spacer",
+        "group": "0606d44726ec54fa",
+        "order": 8,
+        "width": 1,
+        "height": 1
+    },
+    {
+        "id": "c781c15e8bae740a",
+        "type": "ui_spacer",
+        "z": "6c2852b4f11f8f22",
+        "name": "spacer",
+        "group": "0606d44726ec54fa",
+        "order": 11,
+        "width": 1,
+        "height": 1
+    },
+    {
+        "id": "f5e56b43cb58ee3a",
+        "type": "ui_spacer",
+        "z": "6c2852b4f11f8f22",
+        "name": "spacer",
+        "group": "0606d44726ec54fa",
+        "order": 13,
+        "width": 21,
+        "height": 1
+    },
+    {
+        "id": "14203695bde51904",
+        "type": "ui_spacer",
+        "z": "6c2852b4f11f8f22",
+        "name": "spacer",
+        "group": "0606d44726ec54fa",
+        "order": 15,
+        "width": 1,
+        "height": 1
+    },
+    {
+        "id": "e753a3999631516c",
+        "type": "mqtt-broker",
+        "name": "JLB_01",
+        "broker": "127.0.0.1",
+        "port": 1883,
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": 60,
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "0606d44726ec54fa",
+        "type": "ui_group",
+        "name": "Automatische Pflanzenbewässerung",
+        "tab": "23ce5aa6d4aeb975",
+        "order": 1,
+        "disp": true,
+        "width": 21,
+        "collapse": false,
+        "className": ""
+    },
+    {
+        "id": "175f78cfdd9d1855",
+        "type": "MySQLdatabase",
+        "name": "",
+        "host": "127.0.0.1",
+        "port": "3306",
+        "db": "automatische_pflanzenbewaesserung",
+        "tz": "",
+        "charset": "UTF8"
+    },
+    {
+        "id": "23ce5aa6d4aeb975",
+        "type": "ui_tab",
+        "name": "Pflanzenbewässerung",
+        "icon": "dashboard",
+        "disabled": false,
+        "hidden": false
+    }
+]

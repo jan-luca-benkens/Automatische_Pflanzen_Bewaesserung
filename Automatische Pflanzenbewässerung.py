@@ -2,7 +2,7 @@
 
 # Erstellungsdatum: 22.04.2025
 # Änderungsdatum: 06.05.2025
-# Änderungsnummer: 2.0
+# Änderungsnummer: 2.1
 # Programm: Automatische Pflanzenbewässerung
 # Programmierer: Benkens Jan-Luca
 
@@ -119,10 +119,10 @@ BROKER = "192.168.178.122"  			 # IP-Adresse des Brokers (Laptop,PC)
 PORT = 1883								 # Port definieren
 CLIENT_ID = "JLB"						 # Client-Id vom MQTT
 TOPIC1 = "Pflanze/Auto/Bewaesserung"	 # Topic für Sensordaten "Echtzeit"
-TOPIC3 = "Datenbank"					 # Topic für Sensordaten für die Datenbank
+TOPIC3 = "Datenbank/Sensoren/Werte"					 # Topic für Sensordaten für die Datenbank
 TOPIC4 = b"Untererschwellenwert"		 # Topic für Grenzwert Bodenfeuchtigkeit 
 TOPIC5 = b"Obererschwellenwert"			 # Topic für Grenzwert Bodenfeuchtigkeit
-TOPIC2 = b"Pump/EIN/AUS"				 # Topic für manuelle Ansteuerung
+TOPIC2 = b"Pumpe/EIN/AUS"				 # Topic für manuelle Ansteuerung
 
 #----------------------------------------------Funktionen---------------------------------------------
 
